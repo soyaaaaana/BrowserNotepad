@@ -1,0 +1,114 @@
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+    <meta name="color-scheme" content="light dark">
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <script src="./js/loadedEventSupport.js"></script>
+    <script src="./js/material-design/material-design-3.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(registration => {
+            console.log('Service Worker registered with scope:', registration.scope);
+          })
+          .catch(error => {
+            console.error('Service Worker registration failed:', error);
+          });
+      }
+      // document.addEventListener("DOMContentLoaded", () => {
+      //   const textarea = document.getElementById("text");
+      //   const request = window.indexedDB.open("TextDatabase", 3);
+      //   request.onsuccess = function(event) {
+      //     var db = event.target.result;
+      //     var trans = db.transaction(storeName, 'readwrite');
+      //     var store = trans.objectStore(storeName);
+      //     var getReq = store.get("text");
+      //     getReq.onsuccess = function(event) {
+      //       console.log(event.target.result.text);
+      //     }
+      //     var putReq = store.put(data);
+      //   }
+      //   textarea.addEventListener("input", (e) => {
+      //     e.target.value
+      //   });
+      // });
+      document.addEventListener("DOMContentLoaded", async () => {
+        const textarea = document.getElementById("text");
+        let db = new Dexie("TextDatabase");
+        db.version(1).stores({
+          notes: `++id, name, text`,
+        });
+        const last_accessed_item = localStorage.getItem("BrowserNotepad:last_accessed_item");
+        if (last_accessed_item != null) {
+          textarea.value = (await db.notes.get(last_accessed_item)).text;
+        }
+        let current_id = "0";
+        textarea.addEventListener("input", async (e) => {
+          localStorage.setItem("BrowserNotepad:last_accessed_item", current_id);
+          console.log("save");
+          await db.notes.put({ id: current_id, name: "untitled note", text: e.target.value });
+        });
+        textarea.removeAttribute("disabled");
+      });
+      async function deleteCache() {
+        await caches.delete("cache-v1");
+        location.reload();
+      }
+    </script>
+    <style>
+      @import url(./css/material-design-3/light.css) (prefers-color-scheme: light);
+      @import url(./css/material-design-3/light-hc.css) (prefers-color-scheme: light);
+      @import url(./css/material-design-3/light-mc.css) (prefers-color-scheme: light);
+      @import url(./css/material-design-3/dark.css) (prefers-color-scheme: dark);
+      @import url(./css/material-design-3/dark-hc.css) (prefers-color-scheme: dark);
+      @import url(./css/material-design-3/dark-mc.css) (prefers-color-scheme: dark);
+      html {
+        touch-action: manipulation;
+      }
+      body {
+        margin: 1em;
+        background: var(--md-sys-color-background);
+        color: var(--md-sys-color-on-surface);
+      }
+      .title {
+        display: block;
+        margin-top: .75em!important;
+        margin-bottom: 0px!important;
+      }
+      span.title {
+        display: inline-block;
+      }
+      a {
+        color: var(--md-sys-color-primary);
+      }
+      * {
+        user-select: none;
+      }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script type="importmap">
+      {
+        "imports": {
+          "@material/web/": "https://esm.run/@material/web/"
+        }
+      }
+    </script>
+    <script type="module">
+      import '@material/web/all.js';
+      import {styles as typescaleStyles} from '@material/web/typography/md-typescale-styles.js';
+  
+      document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    </script>
+  </head>
+  <body class="dark" style="display: none;">
+    <div style="display:flex;flex-direction: column;height:100%">
+      <div style="margin-bottom:.5rem!important;">
+        <span class="md-typescale-title-large title">ブラウザメモ帳</span>
+        <a href="javascript:deleteCache()" style="margin-left: .5rem;">キャッシュを削除してページを更新</a>
+      </div>
+      <md-filled-text-field id="text" type="textarea" style="height:100%" disabled>
+      </md-filled-text-field>
+    </div>
+  </body>
+</html>
