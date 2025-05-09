@@ -16,6 +16,9 @@
           navigator.serviceWorker.register(scripturl)
             .then(registration => {
               console.log('Service Worker registered with scope:', registration.scope);
+              if (confirm("初めてアクセスしたようです。オフラインで使用するには一度再読み込みする必要があります（https://github.com/soyaaaaana/BrowserNotepad?tab=readme-ov-file#%E6%97%A2%E7%9F%A5%E3%81%AE%E4%B8%8D%E5%85%B7%E5%90%88 を参照）\n再読み込みしますか？")) {
+                location.reload();
+              }
             })
             .catch(error => {
               console.error('Service Worker registration failed:', error);
