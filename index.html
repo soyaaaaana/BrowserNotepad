@@ -3,19 +3,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <meta name="color-scheme" content="light dark">
-    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <script src="https://unpkg.com/dexie/dist/dexie.js" crossorigin></script>
     <script src="./js/loadedEventSupport.js"></script>
     <script src="./js/material-design/material-design-3.js"></script>
     <script>
+      (async() => {
+
+      
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./service-worker.js')
-          .then(registration => {
-            console.log('Service Worker registered with scope:', registration.scope);
-          })
-          .catch(error => {
-            console.error('Service Worker registration failed:', error);
-          });
+        const scripturl = location.origin + "/service-worker.js";
+        if ((await navigator.serviceWorker.getRegistration())?.active?.scriptURL !== scripturl) {
+          navigator.serviceWorker.register(scripturl)
+            .then(registration => {
+              console.log('Service Worker registered with scope:', registration.scope);
+            })
+            .catch(error => {
+              console.error('Service Worker registration failed:', error);
+            });
+        }
       }
+      })();
       // document.addEventListener("DOMContentLoaded", () => {
       //   const textarea = document.getElementById("text");
       //   const request = window.indexedDB.open("TextDatabase", 3);
