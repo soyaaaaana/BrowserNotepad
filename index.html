@@ -14,7 +14,7 @@
             navigator.serviceWorker.register(scripturl, { scope: '/' })
               .then(registration => {
                 console.log('Service Worker registered with scope:', registration.scope);
-                if (confirm("初めてアクセスしたようです。オフラインで使用するには一度再読み込みする必要があります（https://github.com/soyaaaaana/BrowserNotepad?tab=readme-ov-file#%E6%97%A2%E7%9F%A5%E3%81%AE%E4%B8%8D%E5%85%B7%E5%90%88 を参照）\n再読み込みしますか？")) {
+                if (confirm("サービスワーカーが登録されてから初めてアクセスしたようです。オフラインで使用するには一度再読み込みする必要があります（https://github.com/soyaaaaana/BrowserNotepad?tab=readme-ov-file#%E6%97%A2%E7%9F%A5%E3%81%AE%E4%B8%8D%E5%85%B7%E5%90%88 を参照）\n再読み込みしますか？")) {
                   location.reload();
                 }
               })
@@ -63,6 +63,42 @@
         await caches.delete("cache-v1");
         location.reload();
       }
+      Array.prototype.mapAsync = async function (callbackfn, thisArg) {
+          const promises = [];
+          this.forEach(function (...args) {
+            promises.push(callbackfn.call(this, ...args));
+          }, thisArg);
+          return await Promise.all(promises);
+        };
+
+        Array.prototype.forEachAsync = async function (callbackfn, thisArg) {
+          await this.mapAsync(callbackfn, thisArg);
+        };
+
+        Array.prototype.sequentialMapAsync = async function (callbackfn, thisArg) {
+          const results = [];
+          for (let index = 0; index < this.length; index++) {
+            results.push(await callbackfn.call(thisArg, this[index], index, this));
+          }
+          return results;
+        };
+
+        // Array.prototype.sequentialForEachAsync = async function(callbackfn, thisArg) {
+        //   for (let index = 0; index < this.length; index++) {
+        //     await callbackfn.call(thisArg, this[index], index, this);
+        //   }
+        // };
+
+        Array.prototype.sequentialForEachAsync = async function (callbackfn, thisArg) {
+          await this.sequentialMapAsync(callbackfn, thisArg);
+        };
+
+      async function unregisterServiceWorker() {
+        if ('serviceWorker' in navigator) {
+          await (await navigator.serviceWorker.getRegistrations()).sequentialForEachAsync(async service_worker => await service_worker.unregister());
+          location.reload();
+        }
+      }
     </script>
     <style>
       @import url(./css/material-design-3/light.css) (prefers-color-scheme: light);
@@ -109,11 +145,12 @@
       document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
     </script>
   </head>
-  <body class="dark" style="display: none;">
+  <body class="dark light" style="display: none;">
     <div style="display:flex;flex-direction: column;height:100%">
       <div style="margin-bottom:.5rem!important;">
         <span class="md-typescale-title-large title">ブラウザメモ帳</span>
         <a href="javascript:deleteCache()" style="margin-left: .5rem;">キャッシュを削除してページを更新</a>
+        <a href="javascript:unregisterServiceWorker()" style="margin-left: .5rem;">サービスワーカーの登録を解除してページを更新</a>
       </div>
       <md-filled-text-field id="text" type="textarea" style="height:100%;resize:none" disabled>
       </md-filled-text-field>

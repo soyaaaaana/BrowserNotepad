@@ -4,7 +4,7 @@ const URLS_TO_CACHE = [
   // "https://unpkg.com/dexie/dist/dexie.js",
   // "/js/loadedEventSupport.js",
   // "/js/material-design/material-design-3.js",
-  // "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap",
+  "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap",
   // "https://unpkg.com/dexie/dist/dexie.js",
   // "/css/material-design-3/light.css",
   // "/css/material-design-3/light-hc.css",
