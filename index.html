@@ -3,6 +3,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <meta name="color-scheme" content="light dark">
+    <title>ブラウザメモ帳</title>
+    <meta name="description" content="ブラウザで使える、オフラインの利用にも対応したシンプルなメモ帳です。" />
     <script src="https://unpkg.com/dexie/dist/dexie.js" crossorigin></script>
     <script src="./js/loadedEventSupport.js"></script>
     <script src="./js/material-design/material-design-3.js"></script>
@@ -48,6 +50,22 @@
       document.addEventListener("DOMContentLoaded", async () => {
         status_element = document.getElementById("status");
         changeStatus("メモを読み込んでいます");
+        const update = document.getElementById("update");
+        const delete_cache = document.getElementById("delete_cache");
+        const unregister_sw = document.getElementById("unregister_sw");
+        update.addEventListener("click", async () => {
+          await deleteCache();
+          await unregisterServiceWorker();
+          location.reload();
+        });
+        delete_cache.addEventListener("click", async () => {
+          await deleteCache();
+          location.reload();
+        });
+        unregister_sw.addEventListener("click", async () => {
+          await unregisterServiceWorker();
+          location.reload();
+        });
         const textarea = document.getElementById("text");
         let db = new Dexie("TextDatabase");
         db.version(1).stores({
@@ -70,7 +88,6 @@
       });
       async function deleteCache() {
         await caches.delete("cache-v1");
-        location.reload();
       }
       Array.prototype.mapAsync = async function (callbackfn, thisArg) {
           const promises = [];
@@ -105,9 +122,13 @@
       async function unregisterServiceWorker() {
         if ('serviceWorker' in navigator) {
           await (await navigator.serviceWorker.getRegistrations()).sequentialForEachAsync(async service_worker => await service_worker.unregister());
-          await navigator.serviceWorker.register(scripturl, { scope: '/' })
-          location.reload();
+          await navigator.serviceWorker.register(scripturl, { scope: '/' });
         }
+      }
+
+      async function update() {
+        await deleteCache();
+        await unregisterServiceWorker();
       }
     </script>
     <style>
@@ -175,13 +196,18 @@
         </div>
         <form slot="content" id="settings_form" method="dialog">
           <md-list style="background:var(--md-sys-color-surface-container-high);">
-            <md-list-item type="button" onclick="deleteCache()">
+            <md-list-item type="button" id="update">
+              <div slot="headline">ページを最新の状態に更新</div>
+              <div slot="supporting-text">キャッシュとサービスワーカーを削除してページを完全に最新の状態にします。</div>
+            </md-list-item>
+            <md-divider style="margin:.5rem 0px .5rem 0px;"></md-divider>
+            <md-list-item type="button" id="delete_cache" onclick="await deleteCache();location.reload()">
               <div slot="headline">キャッシュを削除してページを更新</div>
               <div slot="supporting-text">キャッシュを削除して最新のページを表示します。</div>
             </md-list-item>
-            <md-list-item type="button" onclick="unregisterServiceWorker()">
+            <md-list-item type="button" id="unregister_sw" onclick="await unregisterServiceWorker();location.reload()">
               <div slot="headline">サービスワーカーを再登録してページを更新</div>
-              <div slot="supporting-text">サービスワーカーを再登録を解除してページを更新し、最新の状態にします。</div>
+              <div slot="supporting-text">サービスワーカーを再登録を解除してバックグラウンドの機能がアップデートされたページを更新します。</div>
             </md-list-item>
           </md-list>
         </form>
