@@ -7,9 +7,9 @@
     <script src="./js/loadedEventSupport.js"></script>
     <script src="./js/material-design/material-design-3.js"></script>
     <script>
+      const scripturl = location.origin + "/service-worker.js";
       self.addEventListener('load', async () => {
         if ('serviceWorker' in navigator) {
-          const scripturl = location.origin + "/service-worker.js";
           if ((await navigator.serviceWorker.getRegistration())?.active?.scriptURL !== scripturl) {
             navigator.serviceWorker.register(scripturl, { scope: '/' })
               .then(registration => {
@@ -41,7 +41,13 @@
       //     e.target.value
       //   });
       // });
+      let status_element = null;
+      function changeStatus(status) {
+        status_element.textContent = status;
+      }
       document.addEventListener("DOMContentLoaded", async () => {
+        status_element = document.getElementById("status");
+        changeStatus("メモを読み込んでいます");
         const textarea = document.getElementById("text");
         let db = new Dexie("TextDatabase");
         db.version(1).stores({
@@ -51,11 +57,14 @@
         if (last_accessed_item != null) {
           textarea.value = (await db.notes.get(last_accessed_item)).text;
         }
+        changeStatus("メモの準備が完了しました");
         let current_id = "0";
         textarea.addEventListener("input", async (e) => {
           localStorage.setItem("BrowserNotepad:last_accessed_item", current_id);
           console.log("save");
+          changeStatus("メモを保存しています");
           await db.notes.put({ id: current_id, name: "untitled note", text: e.target.value });
+          changeStatus("メモを保存しました");
         });
         textarea.removeAttribute("disabled");
       });
@@ -96,6 +105,7 @@
       async function unregisterServiceWorker() {
         if ('serviceWorker' in navigator) {
           await (await navigator.serviceWorker.getRegistrations()).sequentialForEachAsync(async service_worker => await service_worker.unregister());
+          await navigator.serviceWorker.register(scripturl, { scope: '/' })
           location.reload();
         }
       }
@@ -111,13 +121,13 @@
         touch-action: manipulation;
       }
       body {
-        margin: 1em;
+        margin: .5em 1em 0px 1em;
         background: var(--md-sys-color-background);
         color: var(--md-sys-color-on-surface);
       }
       .title {
         display: block;
-        margin-top: .75em!important;
+        margin-top: .25em!important;
         margin-bottom: 0px!important;
       }
       span.title {
@@ -146,14 +156,39 @@
     </script>
   </head>
   <body class="dark light" style="display: none;">
-    <div style="display:flex;flex-direction: column;height:100%">
+    <div style="display:flex;flex-direction:column;height:100%">
       <div style="margin-bottom:.5rem!important;">
         <span class="md-typescale-title-large title">ブラウザメモ帳</span>
-        <a href="javascript:deleteCache()" style="margin-left: .5rem;">キャッシュを削除してページを更新</a>
-        <a href="javascript:unregisterServiceWorker()" style="margin-left: .5rem;">サービスワーカーの登録を解除してページを更新</a>
+        <md-outlined-button style="margin-left: .5rem;" onclick="document.getElementById('settings').open = true;">
+          設定
+          <svg slot="icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"/></svg>
+        </md-outlined-button>
       </div>
       <md-filled-text-field id="text" type="textarea" style="height:100%;resize:none" disabled>
       </md-filled-text-field>
+      <div style="margin:.25rem 0px .25rem 0px!important;">
+        <span>ステータス: <span id="status"></span></span>
+      </div>
+      <md-dialog id="settings">
+        <div slot="headline">
+          設定
+        </div>
+        <form slot="content" id="settings_form" method="dialog">
+          <md-list style="background:var(--md-sys-color-surface-container-high);">
+            <md-list-item type="button" onclick="deleteCache()">
+              <div slot="headline">キャッシュを削除してページを更新</div>
+              <div slot="supporting-text">キャッシュを削除して最新のページを表示します。</div>
+            </md-list-item>
+            <md-list-item type="button" onclick="unregisterServiceWorker()">
+              <div slot="headline">サービスワーカーを再登録してページを更新</div>
+              <div slot="supporting-text">サービスワーカーを再登録を解除してページを更新し、最新の状態にします。</div>
+            </md-list-item>
+          </md-list>
+        </form>
+        <div slot="actions">
+          <md-text-button form="settings_form">閉じる</md-text-button>
+        </div>
+      </md-dialog>
     </div>
   </body>
 </html>
